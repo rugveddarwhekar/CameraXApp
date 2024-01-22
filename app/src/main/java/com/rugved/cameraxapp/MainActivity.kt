@@ -3,6 +3,7 @@ package com.rugved.cameraxapp
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -99,12 +100,15 @@ class MainActivity : AppCompatActivity() {
                 }
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
+            imageCapture = ImageCapture.Builder().build()
+
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     this,
                     cameraSelector,
-                    preview
+                    preview,
+                    imageCapture
                 )
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -112,7 +116,42 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun takePhoto() {}
+    private fun takePhoto() {
+        val imageCapture = imageCapture ?: return
+
+        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+            .format(System.currentTimeMillis())
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P){
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraXImage")
+            }
+        }
+
+        val outputOptions = ImageCapture.OutputFileOptions
+            .Builder(contentResolver,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues)
+            .build()
+
+        imageCapture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageSavedCallback{
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    //val savedUri = Uri.fromFile(photoFile)
+                    val msg = "Photo capture succeeded: ${outputFileResults.savedUri}"
+                    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+                    Log.d(TAG, msg)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e(TAG, "onError: ${exception.message}", exception)
+                }
+            }
+        )
+    }
 
     private fun captureVideo() {}
 
