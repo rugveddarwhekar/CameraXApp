@@ -81,23 +81,15 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
-
-
     private fun requestPermissions() {
-        TODO("Not yet implemented")
+        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
     }
 
-    private fun startCamera() {
-        TODO("Not yet implemented")
-    }
+    private fun startCamera() {}
 
-    private fun takePhoto() {
-        TODO("Not yet implemented")
-    }
+    private fun takePhoto() {}
 
-    private fun captureVideo() {
-        TODO("Not yet implemented")
-    }
+    private fun captureVideo() {}
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
