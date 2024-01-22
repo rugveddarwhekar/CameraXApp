@@ -44,6 +44,26 @@ class MainActivity : AppCompatActivity() {
 
         private lateinit var cameraExecutor: ExecutorService
 
+        private val activityResultLauncher =
+            registerForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions())
+            {
+                permissions ->
+                // Permission granted/rejected handling
+                var permissionGranted = true
+                permissions.entries.forEach {
+                    if (it.key in REQUIRED_PERMISSIONS && !it.value)
+                        permissionGranted = false
+                }
+                if(!permissionGranted){
+                    Toast.makeText(baseContext,
+                        "Permission request denied",
+                        Toast.LENGTH_SHORT).show()
+                } else {
+                    startCamera()
+                }
+            }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -60,6 +80,8 @@ class MainActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
+
+
 
     private fun requestPermissions() {
         TODO("Not yet implemented")
