@@ -38,6 +38,8 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+typealias LumaListener = (luma: Double) -> Unit
+
 class MainActivity : AppCompatActivity() {
         private lateinit var viewBinding: ActivityMainBinding
 
@@ -102,13 +104,23 @@ class MainActivity : AppCompatActivity() {
 
             imageCapture = ImageCapture.Builder().build()
 
+            val imageAnalyzer = ImageAnalysis.Builder()
+                .build()
+                .also{
+                    it.setAnalyzer(cameraExecutor, LuminosityAnalyzer {
+                        luma ->
+                        Log.d(TAG, "Average Luminosity: $luma")
+                    })
+                }
+
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     this,
                     cameraSelector,
                     preview,
-                    imageCapture
+                    imageCapture,
+                    imageAnalyzer
                 )
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
@@ -177,5 +189,25 @@ class MainActivity : AppCompatActivity() {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }.toTypedArray()
+    }
+}
+
+private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
+    private fun ByteBuffer.toByteArray() : ByteArray{
+        rewind()
+        val data = ByteArray(remaining())
+        get(data)
+        return data
+    }
+
+    override fun analyze(image: ImageProxy) {
+        val buffer = image.planes[0].buffer
+        val data = buffer.toByteArray()
+        val pixels = data.map { it.toInt() and 0xFF }
+        val luma = pixels.average()
+
+        listener(luma)
+
+        image.close()
     }
 }
